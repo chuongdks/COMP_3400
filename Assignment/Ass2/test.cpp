@@ -6,58 +6,35 @@
 
 using namespace std;
 
-// // Define type aliases for clarity
-// using OrderMap = map<string, string>;
-// using OrderVector = vector<pair<string, string>>;
-
-// Function to read from txt file and put id, status into the Map
-map<string, string> readOrdersFromFile(const string& filename) {
-    map<string, string> orders;
+vector<map<string, string>> readOrdersFromFile(const string& filename) {
+    vector<map<string, string>> ordersVector;
     ifstream inputFile(filename);
     string line;
 
-    // check error when reading file
     if (!inputFile) {
         cerr << "Error opening file: " << filename << endl;
-        return orders;          // cant return 1 cuz map
+        return ordersVector;  // Return empty vector on error
     }
 
     // https://stackoverflow.com/questions/43865943/read-line-textfile-and-split-if-it-got-comma
     while (getline(inputFile, line)) {
-        // std::cout << line << '\n';                                   // debug
         istringstream iss(line);
         string trackingID, status;
 
-        // extract line until delimiter '\t' is found
         if (getline(iss, trackingID, '\t') && getline(iss, status)) {        
-            trackingID = trackingID.substr(1, trackingID.size() - 2);   // Remove quotes using substring https://www.baeldung.com/java-remove-start-end-double-quote
-            status = status.substr(1, status.size() - 2);               // Remove quotes        
-            orders[trackingID] = status;                                // Update and Insert new map this way: https://en.cppreference.com/w/cpp/container/map (Example part)
+            trackingID = trackingID.substr(1, trackingID.size() - 2);       // Remove quotes using substring https://www.baeldung.com/java-remove-start-end-double-quote
+            status = status.substr(1, status.size() - 2);                   // Remove quotes
 
-            // std::cout << trackingID << '\n' << status << "\n";       // debug
+            map<string, string> singleOrderMap;                             // Create new map for each key value pair
+            singleOrderMap[trackingID] = status;                            // Update and Insert new map this way: https://en.cppreference.com/w/cpp/container/map (Example part)
+
+            ordersVector.push_back(singleOrderMap);                         // Push that map into the vector
         }
     }
+
     inputFile.close();
-    return orders;
+    return ordersVector;
 }
-
-// Store the package info (Map info) to Vector of Pairs
-vector<map<string, string>> mapToVector(const map<string, string>& orders) {
-    vector<map<string, string>> orderVector;
-    for (const auto& order : orders) {                                  // (https://www.scaler.com/topics/vector-pair-in-cpp/ in Iterator Techniques) still pushing pairs in the end lol
-        orderVector.push_back({order.first, order.second});             // https://www.scaler.com/topics/vector-pair-in-cpp/
-    }
-    return orderVector;
-}
-
-// // Convert Vector back to Map
-// map<string, string> vectorToMap(const OrderVector& orderList) {
-//     map<string, string> orders;
-//     for (const auto& order : orderList) {
-//         orders[order.first] = order.second;
-//     }
-//     return orders;
-// }
 
 // 2. Update the status of an Order 
 void updateOrderStatus(vector<map<string, string>>& orders, const string& trackingID, const string& updateStatus) {
@@ -130,12 +107,19 @@ int main(int argc, char* argv[]) {
 
     string filename = argv[1];
 
-    // Step 1: Read orders from file into a map
-    map<string, string> ordersMap = readOrdersFromFile(filename);
-
     // Step 2: Convert the map to a vector of pairs
-    vector<map<string, string>> ordersVector = mapToVector(ordersMap);
+    vector<map<string, string>> ordersVector = readOrdersFromFile(filename);
 
+    // debug output
+    int mapNum = 1;
+    for (const auto& orderMap : ordersVector) {
+        cout << "Map #" << mapNum++ << ":\n";
+        for (const auto& pair : orderMap) {
+            cout << "  Tracking ID: " << pair.first << ", Status: " << pair.second << endl;
+        }
+        cout << "------\n";
+    }
+    
     int choice;
     while (true) {
         cout << "\nUberEats Order Tracking System\n";
