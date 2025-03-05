@@ -42,10 +42,10 @@ map<string, string> readOrdersFromFile(const string& filename) {
 }
 
 // Store the package info (Map info) to Vector of Pairs
-vector<pair<string, string>> mapToVector(const map<string, string>& orders) {
-    vector<pair<string, string>> orderVector;
-    for (const auto& order : orders) {                                  // (https://www.scaler.com/topics/vector-pair-in-cpp/ in Iterator Techniques)
-        orderVector.push_back(make_pair(order.first, order.second));    // https://www.scaler.com/topics/vector-pair-in-cpp/
+vector<map<string, string>> mapToVector(const map<string, string>& orders) {
+    vector<map<string, string>> orderVector;
+    for (const auto& order : orders) {                                  // (https://www.scaler.com/topics/vector-pair-in-cpp/ in Iterator Techniques) still pushing pairs in the end lol
+        orderVector.push_back({order.first, order.second});             // https://www.scaler.com/topics/vector-pair-in-cpp/
     }
     return orderVector;
 }
@@ -60,11 +60,12 @@ vector<pair<string, string>> mapToVector(const map<string, string>& orders) {
 // }
 
 // 2. Update the status of an Order 
-void updateOrderStatus(vector<pair<string, string>>& orders, const string& trackingID, const string& updateStatus) {
-    for (auto& order : orders) {                                        // (https://www.scaler.com/topics/vector-pair-in-cpp/ in Iterator Techniques)
-        if (order.first == trackingID) {
-            order.second = updateStatus;
-            cout << "Order: " << order.first << " updated to: " << order.second << endl;
+void updateOrderStatus(vector<map<string, string>>& orders, const string& trackingID, const string& updateStatus) {
+    for (auto& order : orders) {                   
+        // https://en.cppreference.com/w/cpp/container/map/find (return map.end() if not found)               
+        if (auto search = order.find(trackingID); search != order.end()) {                      // order.find(trackingID) != order.end()
+            order[trackingID] = updateStatus;
+            cout << "Order: " << search->first << " updated to: " << search->second << endl;
             return;
         }
     }
@@ -72,22 +73,24 @@ void updateOrderStatus(vector<pair<string, string>>& orders, const string& track
 }
 
 // 3. Add new Order with a new Status
-void addNewOrder(vector<pair<string, string>>& orders, const string& trackingID, const string& status) {
+void addNewOrder(vector<map<string, string>>& orders, const string& trackingID, const string& status) {
     for (const auto& order : orders) {
-        if (order.first == trackingID) {
+        // https://en.cppreference.com/w/cpp/container/map/find (return map.end() if not found)               
+        if (auto search = order.find(trackingID); search != order.end()) {                      // order.find(trackingID) != order.end()
             cout << "Order ID is already existed. Please check again" << endl;
             return;
-        }
+        }        
     }
-    orders.push_back(make_pair(trackingID, status));
+    orders.push_back({trackingID, status});    
     cout << "New order added successfully." << endl;
 }
 
 // 4. Search for Order ID then display status
-void searchOrder(const vector<pair<string, string>>& orders, const string& trackingID) {
+void searchOrder(const vector<map<string, string>>& orders, const string& trackingID) {
     for (const auto& order : orders) {
-        if (order.first == trackingID) {
-            cout << "Order Status: " << order.second << endl;
+        // https://en.cppreference.com/w/cpp/container/map/find (return map.end() if not found)               
+        if (auto search = order.find(trackingID); search != order.end()) {                      // order.find(trackingID) != order.end()
+            cout << "Order Status: " << search->second << endl;
             return;
         }
     }
@@ -95,16 +98,27 @@ void searchOrder(const vector<pair<string, string>>& orders, const string& track
 }
 
 // Function to write orders to file from vector
-void writeOrdersToFile(const string& filename, const vector<pair<string, string>>& orders) {
+void writeOrdersToFile(const string& filename, const vector<map<string, string>>& orders) {
     ofstream outf(filename);
     if (!outf) {
         cerr << "Error writing to file: " << filename << endl;
         return;
     }
 
-    for (const auto& order : orders) {
-        outf << "\"" << order.first << "\"\t\"" << order.second << "\"" << endl;
+    // // using for each
+    // for (const auto& order : orders) {
+    //     for (const auto& pair : order) {
+    //         outf << "\"" << pair.first << "\"\t\"" << pair.second << "\"" << endl;
+    //     }
+    // }
+
+    // Using iterator: https://stackoverflow.com/questions/14070940/how-can-i-print-out-c-map-values
+    for (auto orderIt = orders.begin(); orderIt != orders.end(); ++orderIt) { 
+        for (auto it = orderIt->begin(); it != orderIt->end(); ++it) {  
+            outf << "\"" << it->first << "\"\t\"" << it->second << "\"" << endl;
+        }
     }
+
     outf.close();
 }
 
@@ -120,7 +134,7 @@ int main(int argc, char* argv[]) {
     map<string, string> ordersMap = readOrdersFromFile(filename);
 
     // Step 2: Convert the map to a vector of pairs
-    vector<pair<string, string>> ordersVector = mapToVector(ordersMap);
+    vector<map<string, string>> ordersVector = mapToVector(ordersMap);
 
     int choice;
     while (true) {
