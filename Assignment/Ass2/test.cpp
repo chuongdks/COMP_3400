@@ -58,7 +58,11 @@ void addNewOrder(vector<map<string, string>>& orders, const string& trackingID, 
             return;
         }        
     }
-    orders.push_back({trackingID, status});    
+    
+    map<string, string> singleOrderMap;                             // Create new map for each key value pair
+    singleOrderMap[trackingID] = status;                            // Update and Insert new map this way: https://en.cppreference.com/w/cpp/container/map (Example part)
+
+    orders.push_back(singleOrderMap);                         // Push that map into the vector
     cout << "New order added successfully." << endl;
 }
 
@@ -82,19 +86,19 @@ void writeOrdersToFile(const string& filename, const vector<map<string, string>>
         return;
     }
 
-    // // using for each
-    // for (const auto& order : orders) {
-    //     for (const auto& pair : order) {
-    //         outf << "\"" << pair.first << "\"\t\"" << pair.second << "\"" << endl;
-    //     }
-    // }
-
-    // Using iterator: https://stackoverflow.com/questions/14070940/how-can-i-print-out-c-map-values
-    for (auto orderIt = orders.begin(); orderIt != orders.end(); ++orderIt) { 
-        for (auto it = orderIt->begin(); it != orderIt->end(); ++it) {  
-            outf << "\"" << it->first << "\"\t\"" << it->second << "\"" << endl;
+    // using for each
+    for (const auto& order : orders) {
+        for (const auto& pair : order) {
+            outf << "\"" << pair.first << "\"\t\"" << pair.second << "\"" << endl;
         }
     }
+
+    // // Using iterator: https://stackoverflow.com/questions/14070940/how-can-i-print-out-c-map-values
+    // for (auto orderIt = orders.begin(); orderIt != orders.end(); ++orderIt) { 
+    //     for (auto it = orderIt->begin(); it != orderIt->end(); ++it) {  
+    //         outf << "\"" << it->first << "\"\t\"" << it->second << "\"" << endl;
+    //     }
+    // }
 
     outf.close();
 }
@@ -110,15 +114,7 @@ int main(int argc, char* argv[]) {
     // Step 2: Convert the map to a vector of pairs
     vector<map<string, string>> ordersVector = readOrdersFromFile(filename);
 
-    // debug output
-    int mapNum = 1;
-    for (const auto& orderMap : ordersVector) {
-        cout << "Map #" << mapNum++ << ":\n";
-        for (const auto& pair : orderMap) {
-            cout << "  Tracking ID: " << pair.first << ", Status: " << pair.second << endl;
-        }
-        cout << "------\n";
-    }
+
     
     int choice;
     while (true) {
@@ -126,10 +122,12 @@ int main(int argc, char* argv[]) {
         cout << "1. Search Order\n";
         cout << "2. Update Order Status\n";
         cout << "3. Add New Order\n";
-        cout << "4. Exit\n";
+        cout << "4. Print the Tracking ID and Status on screen\n";
+        cout << "5. Exit\n";
         cout << "Enter choice: ";
         cin >> choice;
 
+        int mapNum = 0;
         string trackingID, status;
         switch (choice) {
             case 1:
@@ -156,6 +154,18 @@ int main(int argc, char* argv[]) {
                 writeOrdersToFile(filename, ordersVector);
                 break;
             case 4:
+                // debug output
+                mapNum = 1;
+                for (const auto& orderMap : ordersVector) {
+                    cout << "Map #" << mapNum++ << ":\n";
+                    for (const auto& pair : orderMap) {
+                        cout << "  Tracking ID: " << pair.first << ", Status: " << pair.second << endl;
+                    }
+                    cout << "------\n";
+                }
+                mapNum = 0;
+                break;        
+            case 5:
                 cout << "Exit the program." << endl;
                 return 0;
             default:
