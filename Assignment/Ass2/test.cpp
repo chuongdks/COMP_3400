@@ -6,30 +6,53 @@
 
 using namespace std;
 
+// Use Vector of Maps instead of Vector of Pairs
 vector<map<string, string>> readOrdersFromFile(const string& filename) {
     vector<map<string, string>> ordersVector;
     ifstream inputFile(filename);
     string line;
+    int lineNumber = 0;
 
     if (!inputFile) {
-        cerr << "Error opening file: " << filename << endl;
+        cerr << "No file supplied Error when opening file: " << filename << "\nPlease Exit the program and try again\n";
         return ordersVector;  // Return empty vector on error
     }
 
     // https://stackoverflow.com/questions/43865943/read-line-textfile-and-split-if-it-got-comma
     while (getline(inputFile, line)) {
+        lineNumber++;
         istringstream iss(line);
-        string trackingID, status;
+        string trackingID, status, extraValue;
 
-        if (getline(iss, trackingID, '\t') && getline(iss, status)) {        
-            trackingID = trackingID.substr(1, trackingID.size() - 2);       // Remove quotes using substring https://www.baeldung.com/java-remove-start-end-double-quote
-            status = status.substr(1, status.size() - 2);                   // Remove quotes
+        try { // Try to extract value from the input line
+            if (getline(iss, trackingID, '\t') && getline(iss, status, '\t')) {  
+                // If an extra value is detected      
+                if (getline(iss, extraValue)) {
+                    throw runtime_error("Invalid content at line: " + to_string(lineNumber));
+                }
 
-            map<string, string> singleOrderMap;                             // Create new map for each key value pair
-            singleOrderMap[trackingID] = status;                            // Update and Insert new map this way: https://en.cppreference.com/w/cpp/container/map (Example part)
+                // Check for missing TrackingId or Status
+                if (trackingID.empty() || status.empty()) {
+                    throw runtime_error("Missing value at line: " + to_string(lineNumber));
+                }
 
-            ordersVector.push_back(singleOrderMap);                         // Push that map into the vector
+                // Assign TrackingId and Status as normal
+                trackingID = trackingID.substr(1, trackingID.size() - 2);       // Remove quotes using substring https://www.baeldung.com/java-remove-start-end-double-quote
+                status = status.substr(1, status.size() - 2);                   // Remove quotes
+    
+                map<string, string> singleOrderMap;                             // Create new map for each key value pair
+                singleOrderMap[trackingID] = status;                            // Update and Insert new map this way: https://en.cppreference.com/w/cpp/container/map (Example part)
+    
+                ordersVector.push_back(singleOrderMap);                         // Push that map into the vector
+            }
+            else {
+                throw runtime_error("Invalid content at line " + to_string(lineNumber));
+            }
         }
+        catch (const exception& e){
+            clog << e.what() << endl;  // Print error message
+        }
+
     }
 
     inputFile.close();
@@ -104,18 +127,21 @@ void writeOrdersToFile(const string& filename, const vector<map<string, string>>
 }
 
 int main(int argc, char* argv[]) {
+    string filename = "";
+
     if (argc != 2) {
-        cerr << "Usage: " << argv[0] << " <input_file>" << endl;
-        return 1;
+        cerr << "No Input file Supplied.\nEnter the file name: ";
+        cin >> filename;
+    }
+    else {
+        filename = argv[1];
     }
 
-    string filename = argv[1];
+    
 
     // Step 2: Convert the map to a vector of pairs
     vector<map<string, string>> ordersVector = readOrdersFromFile(filename);
 
-
-    
     int choice;
     while (true) {
         cout << "\nUberEats Order Tracking System\n";
@@ -127,7 +153,7 @@ int main(int argc, char* argv[]) {
         cout << "Enter choice: ";
         cin >> choice;
 
-        int mapNum = 0;
+        int mapNum = 1;
         string trackingID, status;
         switch (choice) {
             case 1:
@@ -154,14 +180,12 @@ int main(int argc, char* argv[]) {
                 writeOrdersToFile(filename, ordersVector);
                 break;
             case 4:
-                // debug output
-                mapNum = 1;
                 for (const auto& orderMap : ordersVector) {
-                    cout << "Map #" << mapNum++ << ":\n";
+                    cout << "Map number: " << mapNum++ << endl;
                     for (const auto& pair : orderMap) {
-                        cout << "  Tracking ID: " << pair.first << ", Status: " << pair.second << endl;
+                        cout << "\tTracking ID: " << pair.first << ", Status: " << pair.second << endl;
                     }
-                    cout << "------\n";
+                    cout << "\n";
                 }
                 mapNum = 0;
                 break;        
